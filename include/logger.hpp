@@ -8,6 +8,8 @@ namespace calculator
 class Logger
 {
   public:
+    Logger();
+
     static Logger& getInstance();
 
     template <typename... Types>
