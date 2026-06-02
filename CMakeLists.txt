@@ -1,17 +1,15 @@
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.15...4.3)
 
-set(THIS_PROJECT_NAME calc)
+project(calc VERSION 2.0 LANGUAGES CXX)
 
-project(${THIS_PROJECT_NAME} VERSION 1.0 LANGUAGES CXX)
-
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
 
-add_executable(${THIS_PROJECT_NAME}
-    src/main.cpp
-)
+# --- COMMON COMPILER SETTINGS ---
+add_library(calc_warnings INTERFACE)
 
 set(DEBUG_FLAGS
     -Wall -Wextra -Wpedantic
@@ -20,66 +18,73 @@ set(DEBUG_FLAGS
     -fsanitize=address,undefined
 )
 
-target_compile_options(${THIS_PROJECT_NAME} PRIVATE
-    $<$<CONFIG:Debug>:${DEBUG_FLAGS}>
+target_compile_options(calc_warnings INTERFACE
+    "$<$<CONFIG:Debug>:${DEBUG_FLAGS}>"
     $<$<CONFIG:Release>:-O2>
 )
 
-target_link_options(${THIS_PROJECT_NAME} PRIVATE
+target_link_options(calc_warnings INTERFACE
     $<$<CONFIG:Debug>:-fsanitize=address,undefined>
 )
 
-# Fetch litmath
-include(FetchContent)
-FetchContent_Declare(
-    litmath
-    GIT_REPOSITORY https://github.com/kenka1/litmath.git
-    GIT_TAG v1.0.0
+# --- SUBDIRECTORIES ---
+add_subdirectory(third_party)
+add_subdirectory(src)
+
+# --- MAIN EXECUTABLE ---
+add_executable(${PROJECT_NAME} src/main.cpp)
+
+target_link_libraries(${PROJECT_NAME} PRIVATE
+    calc_core
+    calc_warnings
 )
-FetchContent_MakeAvailable(litmath)
-target_link_libraries(${THIS_PROJECT_NAME} PRIVATE litmath)
 
-# Setup clang-format
-if(USE_CLANG_FORMAT)
-    find_program(CLANG_FORMAT_PATH NAMES clang-format-21 REQUIRED)
-    message(STATUS "Found clang-format: ${CLANG_FORMAT_PATH}")
-
-    file(GLOB_RECURSE CLANG_FORMAT_SRC CONFIGURE_DEPENDS
-        src/*.h
-        src/*.cpp
-        src/*.hpp
-    )
-
-    add_custom_target(clang-format-fix
-        COMMAND
-            ${CLANG_FORMAT_PATH} -style=file -i ${CLANG_FORMAT_SRC}
-        WORKING_DIRECTORY
-            ${CMAKE_SOURCE_DIR}
-        COMMENT
-            "Formatting ${THIS_PROJECT_NAME} with ${CLANG_FORMAT_PATH} ..."
-    )
-
-    add_custom_target(clang-format
-        COMMAND
-            run-clang-format.py --clang-format-executable=${CLANG_FORMAT_PATH} --style=file ${CLANG_FORMAT_SRC}
-        WORKING_DIRECTORY
-            ${CMAKE_SOURCE_DIR}
-        COMMENT
-            "Checking format ${THIS_PROJECT_NAME} with ${CLANG_FORMAT_PATH} ..."
-    )
-    add_dependencies(${THIS_PROJECT_NAME} clang-format)
+# --- TESTS ---
+if (BUILD_TESTING)
+    enable_testing()
+    add_subdirectory(test/unit)
 endif()
 
-# Setup clang-tidy
-if(USE_CLANG_TIDY)
-    find_program(CLANG_TIDY_PATH NAMES clang-tidy-21 REQUIRED)
-    message(STATUS "Found clang-tidy: ${CLANG_TIDY_PATH}")
-    set(CLANG_TIDY_COMMAND ${CLANG_TIDY_PATH} "-config-file=${CMAKE_SOURCE_DIR}/.clang-tidy")
-    set_target_properties(${THIS_PROJECT_NAME} PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY_COMMAND}")
+# --- CLANG-FORMAT ---
+if (USE_CLANG_FORMAT)
+    find_program(CLANG_FORMAT NAMES clang-format-21)
+    if (CLANG_FORMAT)
+        message(STATUS "Found clang-format-21: ${CLANG_FORMAT}")
+
+        file(GLOB_RECURSE CLANG_FORMAT_SRC CONFIGURE_DEPENDS
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/test/unit/*.cpp
+        )
+
+        add_custom_target(clang-format-fix
+            COMMAND ${CLANG_FORMAT} -style=file -i ${CLANG_FORMAT_SRC}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+            COMMENT "Formatting ${PROJECT_NAME} with ${CLANG_FORMAT} ..."
+        )
+
+        add_custom_target(clang-format
+            COMMAND run-clang-format.py --clang-format-executable=${CLANG_FORMAT} --style=file ${CLANG_FORMAT_SRC}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+            COMMENT "Checking format ${PROJECT_NAME} with ${CLANG_FORMAT} ..."
+        )
+    endif()
 endif()
 
-# Setup install
+# --- CLANG-TIDY ---
+if (USE_CLANG_TIDY)
+    find_program(CLANG_TIDY NAMES clang-tidy-21)
+    if(CLANG_TIDY)
+        message(STATUS "Found clang-tidy-21: ${CLANG_TIDY}")
+
+        set(CLANG_TIDY_COMMAND ${CLANG_TIDY} "-config-file=${CMAKE_CURRENT_SOURCE_DIR}/.clang-tidy")
+        set_target_properties(${PROJECT_NAME} PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY_COMMAND}")
+        set_target_properties(calc_core PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY_COMMAND}")
+    endif()
+endif()
+
+# --- SETUP INSTALL ---
 include(GNUInstallDirs)
-install(TARGETS ${THIS_PROJECT_NAME}
+install(TARGETS ${PROJECT_NAME}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
