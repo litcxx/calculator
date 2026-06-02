@@ -35,7 +35,7 @@ CalculationRequest Parser::Parse(std::string_view line)
     catch (const json::exception& e)
     {
         throw std::logic_error(
-            "calc: Invalid json format. Use --help for more information.\n");
+            "calc: Invalid json format. Use --help for more information.");
     }
     catch (...)
     {
@@ -59,6 +59,6 @@ Operation Parser::toOperation(std::string_view operation)
     if (operation == "fact")
         return Operation::Fact;
     throw std::logic_error(
-        "Unsupported operation. Use --help for more information.\n");
+        "Unsupported operation. Use --help for more information.");
 }
 } // namespace calculator
