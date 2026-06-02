@@ -3,29 +3,33 @@
 
 #include <gtest/gtest.h>
 
-using namespace calculator;
-
+namespace
+{
 struct ParserMetadata
 {
     std::string line;
-    CalculationRequest result;
+    calculator::CalculationRequest result;
 };
 
 class ValidParssingTest : public testing::TestWithParam<ParserMetadata>
 {};
 
-TEST_P(ValidParssingTest, Valid_user_input)
+class InvalidParssingTest : public testing::TestWithParam<std::string_view>
+{};
+} // namespace
+
+TEST_P(ValidParssingTest, ValidUserInput)
 {
     // Arrange
     auto [line, result] = GetParam();
 
     // Act
-    auto parsed_data = Parser::Parse(line);
+    auto parsedData = calculator::Parser::parse(line);
 
     // Assert
-    EXPECT_EQ(parsed_data.firstValue, result.firstValue);
-    EXPECT_EQ(parsed_data.secondValue, result.secondValue);
-    EXPECT_EQ(parsed_data.operation, result.operation);
+    EXPECT_EQ(parsedData.firstValue, result.firstValue);
+    EXPECT_EQ(parsedData.secondValue, result.secondValue);
+    EXPECT_EQ(parsedData.operation, result.operation);
 }
 
 INSTANTIATE_TEST_SUITE_P(
@@ -33,20 +37,17 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Values(
         ParserMetadata{
             .line = R"({"first": 15, "second": 15, "operation": "add"})",
-            .result = {15, 15, Operation::Add}},
+            .result = {15, 15, calculator::Operation::Add}},
         ParserMetadata{.line = R"({"first": 15, "operation": "fact"})",
-                       .result = {15, 0, Operation::Fact}}));
+                       .result = {15, 0, calculator::Operation::Fact}}));
 
-class InvalidParssingTest : public testing::TestWithParam<std::string_view>
-{};
-
-TEST_P(InvalidParssingTest, Invalid_user_input)
+TEST_P(InvalidParssingTest, InvalidUserInput)
 {
     // Arrange
     auto line = GetParam();
 
     // Act & Assert
-    EXPECT_ANY_THROW(Parser::Parse(line));
+    EXPECT_ANY_THROW(calculator::Parser::parse(line));
 }
 
 INSTANTIATE_TEST_SUITE_P(

@@ -15,24 +15,24 @@ class Logger
     template <typename... Types>
     void info(std::format_string<Types...> fmt, Types&&... args)
     {
-        return log_info(std::format(fmt, std::forward<Types>(args)...));
+        return logInfo(std::format(fmt, std::forward<Types>(args)...));
     }
 
     template <typename... Types>
     void warn(std::format_string<Types...> fmt, Types&&... args)
     {
-        return log_warn(std::format(fmt, std::forward<Types>(args)...));
+        return logWarn(std::format(fmt, std::forward<Types>(args)...));
     }
 
     template <typename... Types>
     void error(std::format_string<Types...> fmt, Types&&... args)
     {
-        return log_error(std::format(fmt, std::forward<Types>(args)...));
+        return logError(std::format(fmt, std::forward<Types>(args)...));
     }
 
   private:
-    void log_info(std::string_view msg);
-    void log_warn(std::string_view msg);
-    void log_error(std::string_view msg);
+    static void logInfo(std::string_view msg);
+    static void logWarn(std::string_view msg);
+    static void logError(std::string_view msg);
 };
 } // namespace calculator

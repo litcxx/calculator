@@ -7,15 +7,16 @@
 #include <cstring>
 #include <format>
 #include <print>
+#include <span>
 #include <stdexcept>
 
 namespace
 {
 struct ErrorTranslator
 {
-    static std::string toErrorMsg(lit::ErrorStatus ec)
+    static std::string toErrorMsg(lit::ErrorStatus errorStatus)
     {
-        switch (ec)
+        switch (errorStatus)
         {
             case lit::ErrorStatus::kOverflow:
                 return "Overflow";
@@ -43,6 +44,8 @@ void Application::run(int argc, char** argv)
 
 void Application::getTask(int argc, char** argv)
 {
+    const std::span<char* const> args(argv, static_cast<std::size_t>(argc));
+
     if (argc != 2)
     {
         task_.status = Status::Error;
@@ -50,20 +53,20 @@ void Application::getTask(int argc, char** argv)
         throw std::logic_error("calc: Use --help for more information.");
     }
 
-    if (std::strcmp(argv[1], "--help") == 0 || std::strcmp(argv[1], "-h") == 0)
+    if (std::strcmp(args[1], "--help") == 0 || std::strcmp(args[1], "-h") == 0)
     {
         throw std::format(
             "Usage: {} \'{{\"first\": [value], \"second\": [value], "
             "\"operation\": [op]}}\'\n"
             "Operation supports: add, sub, div, mul, pow, fact(requires only "
             "\"first\" and \"op\")",
-            argv[0]);
+            args[0]);
     }
 
     try
     {
-        Logger::getInstance().info("Parsing task from: {}", argv[1]);
-        task_.request = Parser::Parse(argv[1]);
+        Logger::getInstance().info("Parsing task from: {}", args[1]);
+        task_.request = Parser::parse(args[1]);
     }
     catch (const std::exception& e)
     {
