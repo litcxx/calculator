@@ -11,6 +11,7 @@ FetchContent_MakeAvailable(googletest)
 
 set(SOURCES
     parser_test.cpp
+    application_test.cpp
 )
 
 add_executable(unit_tests ${SOURCES})
