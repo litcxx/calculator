@@ -14,14 +14,13 @@ Simple C++ cli-calculator for integeres
 ## Requirements
 
 - CMake 3.15+
-- Ninja
 - Clang 21
 - GCC/Clang compiler
 
 ## Install
 ```bash
 cd calculator
-cmake -B build
+cmake -B build -DCMAKE_BUILD_TYPE=Release
 sudo cmake --build build --target install
 ```
 
@@ -35,11 +34,11 @@ calc --help
 
 ```bash
 cd calculator
-cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DUSE_CLANG_FORMAT=ON -DUSE_CLANG_TIDY=ON
+cmake -B build -DCMAKE_BUILD_TYPE=Debug -DUSE_CLANG_FORMAT=ON -DUSE_CLANG_TIDY=ON -DBUILD_TESTING=ON
 cmake --build build
 ```
 
 ## Run tests
 ```bash
-./test/test.sh ./build/bin/calc
+ctest --test-dir build
 ```
