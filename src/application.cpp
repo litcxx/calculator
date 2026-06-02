@@ -8,20 +8,23 @@
 
 namespace
 {
-std::string toErrorMsg(lit::ErrorStatus ec)
+struct ErrorTranslator
 {
-    switch (ec)
+    static std::string toErrorMsg(lit::ErrorStatus ec)
     {
-        case lit::ErrorStatus::kOverflow:
-            return "Overflow";
-        case lit::ErrorStatus::kDivisionByZero:
-            return "Division by zero";
-        case lit::ErrorStatus::kInvalidNumber:
-            return "invalid number";
-        default:
-            return "Calculation error";
+        switch (ec)
+        {
+            case lit::ErrorStatus::kOverflow:
+                return "Overflow";
+            case lit::ErrorStatus::kDivisionByZero:
+                return "Division by zero";
+            case lit::ErrorStatus::kInvalidNumber:
+                return "invalid number";
+            default:
+                return "Calculation error";
+        }
     }
-}
+};
 } // namespace
 
 namespace calculator
@@ -71,7 +74,7 @@ void Application::makeCalculate()
 
     if (res.error_ != lit::ErrorStatus::kOk)
     {
-        throw std::logic_error(toErrorMsg(res.error_));
+        throw std::logic_error(ErrorTranslator::toErrorMsg(res.error_));
     }
     task_.result = res.value_;
     task_.status = Status::Success;
