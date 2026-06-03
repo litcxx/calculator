@@ -11,18 +11,19 @@ namespace calculator
 {
 CalculationRequest Parser::parse(std::string_view line)
 {
-    CalculationRequest res;
     try
     {
+        CalculationRequest request;
+
         const auto parsedData = json::parse(line);
         const std::string_view operation =
             parsedData.at("operation").get_ref<const std::string&>();
 
-        res.operation = toOperation(operation);
-        switch (res.operation)
+        request.operation = toOperation(operation);
+        switch (request.operation)
         {
             case Operation::Fact:
-                res.firstValue = parsedData.at("first");
+                request.firstValue = parsedData.at("first");
                 if (parsedData.count("second") != 0)
                 {
                     throw std::logic_error("calc: Invalid json format. Use "
@@ -30,9 +31,11 @@ CalculationRequest Parser::parse(std::string_view line)
                 }
                 break;
             default:
-                res.firstValue = parsedData.at("first");
-                res.secondValue = parsedData.at("second");
+                request.firstValue = parsedData.at("first");
+                request.secondValue = parsedData.at("second");
         }
+
+        return request;
     }
     catch (const json::exception& e)
     {
@@ -43,7 +46,6 @@ CalculationRequest Parser::parse(std::string_view line)
     {
         throw;
     }
-    return res;
 }
 
 Operation Parser::toOperation(std::string_view operation)
