@@ -8,8 +8,6 @@ namespace calculator
 class Logger
 {
   public:
-    Logger();
-
     static Logger& getInstance();
 
     template <typename... Types>
@@ -31,6 +29,8 @@ class Logger
     }
 
   private:
+    Logger();
+
     static void logInfo(std::string_view msg);
     static void logWarn(std::string_view msg);
     static void logError(std::string_view msg);
