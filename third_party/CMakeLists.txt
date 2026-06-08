@@ -8,7 +8,6 @@ FetchContent_Declare(
     GIT_SHALLOW TRUE
 )
 FetchContent_MakeAvailable(litmath)
-# target_link_libraries(${PROJECT_NAME} PRIVATE litmath)
 
 # Fetch nlohmann/json
 FetchContent_Declare(
@@ -16,15 +15,13 @@ FetchContent_Declare(
     URL https://github.com/nlohmann/json/archive/refs/tags/v3.11.0.tar.gz
 )
 FetchContent_MakeAvailable(nlohmann_json)
-# target_link_libraries(${PROJECT_NAME} PRIVATE nlohmann_json)
 
 # Fetch gabime/spdlog
 FetchContent_Declare(
     spdlog
-    URL https://github.com/gabime/spdlog/archive/refs/tags/v1.15.0.tar.gz
+    URL https://github.com/gabime/spdlog/archive/refs/tags/v1.12.0.tar.gz
 )
 FetchContent_MakeAvailable(spdlog)
-# target_link_libraries(${PROJECT_NAME} PRIVATE spdlog)
 
 add_library(third_party INTERFACE)
 target_link_libraries(third_party INTERFACE

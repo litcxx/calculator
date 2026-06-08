@@ -35,11 +35,10 @@ TEST_P(ValidParssingTest, ValidUserInput)
 INSTANTIATE_TEST_SUITE_P(
     Valid_user_input, ValidParssingTest,
     ::testing::Values(
-        ParserMetadata{
-            .line = R"({"first": 15, "second": 15, "operation": "add"})",
-            .result = {15, 15, calculator::Operation::Add}},
-        ParserMetadata{.line = R"({"first": 15, "operation": "fact"})",
-                       .result = {15, 0, calculator::Operation::Fact}}));
+        ParserMetadata{R"({"first": 15, "second": 15, "operation": "add"})",
+                       {15, 15, calculator::Operation::Add}},
+        ParserMetadata{R"({"first": 15, "operation": "fact"})",
+                       {15, 0, calculator::Operation::Fact}}));
 
 TEST_P(InvalidParssingTest, InvalidUserInput)
 {

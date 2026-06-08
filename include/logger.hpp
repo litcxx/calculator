@@ -1,6 +1,6 @@
-#pragma once
+#ifndef LOGGER_H_
+#define LOGGER_H_
 
-#include <format>
 #include <string_view>
 
 namespace calculator
@@ -10,29 +10,13 @@ class Logger
   public:
     static Logger& getInstance();
 
-    template <typename... Types>
-    void info(std::format_string<Types...> fmt, Types&&... args)
-    {
-        return logInfo(std::format(fmt, std::forward<Types>(args)...));
-    }
-
-    template <typename... Types>
-    void warn(std::format_string<Types...> fmt, Types&&... args)
-    {
-        return logWarn(std::format(fmt, std::forward<Types>(args)...));
-    }
-
-    template <typename... Types>
-    void error(std::format_string<Types...> fmt, Types&&... args)
-    {
-        return logError(std::format(fmt, std::forward<Types>(args)...));
-    }
+    void info(std::string_view msg);
+    void warn(std::string_view msg);
+    void error(std::string_view msg);
 
   private:
     Logger();
-
-    static void logInfo(std::string_view msg);
-    static void logWarn(std::string_view msg);
-    static void logError(std::string_view msg);
 };
 } // namespace calculator
+
+#endif

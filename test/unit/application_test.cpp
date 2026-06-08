@@ -8,7 +8,7 @@ TEST(ApplicationTest, SuccessfullAddition)
     std::string name("calc");
     std::string format(R"({"first": 2, "second": 3, "operation": "add"})");
     std::vector<char*> argv = {name.data(), format.data()};
-    int argc = 2;
+    const int argc = 2;
     calculator::Application sut;
 
     // Act
@@ -25,7 +25,7 @@ TEST(ApplicationTest, SuccessfullFactorial)
     std::string name("calc");
     std::string format(R"({"first": 10, "operation": "fact"})");
     std::vector<char*> argv = {name.data(), format.data()};
-    int argc = 2;
+    const int argc = 2;
     calculator::Application sut;
 
     // Act
@@ -42,7 +42,7 @@ TEST(ApplicationTest, InvalidJsonFormat)
     std::string name("calc");
     std::string format(R"({"invalid": "format"})");
     std::vector<char*> argv = {name.data(), format.data()};
-    int argc = 2;
+    const int argc = 2;
     calculator::Application sut;
 
     // Act & Arrange
@@ -56,7 +56,7 @@ TEST(ApplicationTest, DivisionByZero)
     std::string name("calc");
     std::string format(R"({"first": 10, "second": 0, "operation": "div"})");
     std::vector<char*> argv = {name.data(), format.data()};
-    int argc = 2;
+    const int argc = 2;
     calculator::Application sut;
 
     // Act & Arrange
@@ -69,7 +69,7 @@ TEST(ApplicationTest, InvalidArgumentsCount)
     // Arrange
     std::string name("calc");
     std::vector<char*> argv = {name.data()};
-    int argc = 1;
+    const int argc = 1;
     calculator::Application sut;
 
     // Act & Arrange

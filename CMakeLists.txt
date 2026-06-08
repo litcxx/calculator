@@ -2,8 +2,9 @@ cmake_minimum_required(VERSION 3.15...4.3)
 
 project(calc VERSION 2.0 LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
@@ -74,12 +75,24 @@ endif()
 # --- CLANG-TIDY ---
 if (USE_CLANG_TIDY)
     find_program(CLANG_TIDY NAMES clang-tidy-21)
+
     if(CLANG_TIDY)
         message(STATUS "Found clang-tidy-21: ${CLANG_TIDY}")
 
-        set(CLANG_TIDY_COMMAND ${CLANG_TIDY} "-config-file=${CMAKE_CURRENT_SOURCE_DIR}/.clang-tidy")
-        set_target_properties(${PROJECT_NAME} PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY_COMMAND}")
-        set_target_properties(calc_core PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY_COMMAND}")
+        file(GLOB_RECURSE CLANG_TIDY_SRC CONFIGURE_DEPENDS
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/test/unit/*.cpp
+        )
+
+        add_custom_target(clang-tidy
+            COMMAND ${CLANG_TIDY}
+                    -p ${CMAKE_BINARY_DIR}
+                    -config-file=${CMAKE_CURRENT_SOURCE_DIR}/.clang-tidy
+                    ${CLANG_TIDY_SRC}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+            COMMENT "Running clang-tidy ..."
+        )
     endif()
 endif()
 

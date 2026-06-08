@@ -1,4 +1,5 @@
-#pragma once
+#ifndef APPLICATION_H_
+#define APPLICATION_H_
 
 #include "config.hpp"
 
@@ -11,6 +12,7 @@ class Application
   public:
     void run(int argc, char** argv);
 
+    [[nodiscard]]
     const Task& getTask() const noexcept
     {
         return task_;
@@ -21,8 +23,9 @@ class Application
     void makeCalculate();
     void printResult() const;
 
-  private:
     Task task_;
 };
 
 } // namespace calculator
+
+#endif

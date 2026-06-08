@@ -1,4 +1,5 @@
-#pragma once
+#ifndef PARSER_H_
+#define PARSER_H_
 
 #include "config.hpp"
 
@@ -15,3 +16,5 @@ class Parser
     static Operation toOperation(std::string_view operation);
 };
 } // namespace calculator
+
+#endif

@@ -22,17 +22,17 @@ Logger& Logger::getInstance()
     return instance;
 }
 
-void Logger::logInfo(std::string_view msg)
+void Logger::info(std::string_view msg)
 {
     spdlog::info(msg);
 }
 
-void Logger::logWarn(std::string_view msg)
+void Logger::warn(std::string_view msg)
 {
     spdlog::warn(msg);
 }
 
-void Logger::logError(std::string_view msg)
+void Logger::error(std::string_view msg)
 {
     spdlog::error(msg);
 }

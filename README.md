@@ -14,8 +14,10 @@ Simple C++ cli-calculator for integeres
 ## Requirements
 
 - CMake 3.15+
-- Clang 21
-- GCC/Clang compiler
+- GCC 10+ (C++17 compiler)
+
+### Optional tools
+- Clang 21+ (clang-tidy, clang-format)
 
 ## Install
 ```bash

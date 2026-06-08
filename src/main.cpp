@@ -1,7 +1,9 @@
 #include "application.hpp"
 #include "logger.hpp"
 
-#include <print>
+#include <cstdlib>
+#include <exception>
+#include <iostream>
 
 int main(int argc, char** argv)
 {
@@ -12,12 +14,12 @@ int main(int argc, char** argv)
     }
     catch (const std::exception& ec)
     {
-        calculator::Logger::getInstance().error("Error: {}", ec.what());
+        calculator::Logger::getInstance().error(ec.what());
         return EXIT_FAILURE;
     }
     catch (const std::string& str)
     {
-        std::println("{}", str);
+        std::cout << str << '\n';
     }
     catch (...)
     {

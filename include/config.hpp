@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CONFIG_H_
+#define CONFIG_H_
 
 #include <cstdint>
 
@@ -35,3 +36,5 @@ struct Task
     Status status{Status::Pending};
 };
 } // namespace calculator
+
+#endif
