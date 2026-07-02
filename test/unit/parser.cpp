@@ -1,14 +1,19 @@
-#include "config.hpp"
-#include "parser.hpp"
+#include "io/parser.hpp"
+
+#include "utils/config.hpp"
+
+#include <ostream>
 
 #include <gtest/gtest.h>
+
+using namespace calculator; // NOLINT
 
 namespace
 {
 struct ParserMetadata
 {
     std::string line;
-    calculator::CalculationRequest result;
+    CalculationRequest result;
 };
 
 class ValidParssingTest : public testing::TestWithParam<ParserMetadata>
@@ -16,15 +21,21 @@ class ValidParssingTest : public testing::TestWithParam<ParserMetadata>
 
 class InvalidParssingTest : public testing::TestWithParam<std::string_view>
 {};
+
+void PrintTo(const ParserMetadata& metadata, std::ostream* os) // NOLINT
+{
+    *os << "{ field1: " << metadata.line << '\n';
+}
 } // namespace
 
 TEST_P(ValidParssingTest, ValidUserInput)
 {
     // Arrange
-    auto [line, result] = GetParam();
+    const auto [line, result] = GetParam();
+    Parser sut;
 
     // Act
-    auto parsedData = calculator::Parser::parse(line);
+    const auto parsedData = sut.parse(line);
 
     // Assert
     EXPECT_EQ(parsedData.firstValue, result.firstValue);
@@ -36,17 +47,18 @@ INSTANTIATE_TEST_SUITE_P(
     Valid_user_input, ValidParssingTest,
     ::testing::Values(
         ParserMetadata{R"({"first": 15, "second": 15, "operation": "add"})",
-                       {15, 15, calculator::Operation::Add}},
+                       {15, 15, Operation::Add}},
         ParserMetadata{R"({"first": 15, "operation": "fact"})",
-                       {15, 0, calculator::Operation::Fact}}));
+                       {15, 0, Operation::Fact}}));
 
 TEST_P(InvalidParssingTest, InvalidUserInput)
 {
     // Arrange
-    auto line = GetParam();
+    const auto line = GetParam();
+    Parser sut;
 
     // Act & Assert
-    EXPECT_ANY_THROW(calculator::Parser::parse(line));
+    EXPECT_ANY_THROW(sut.parse(line));
 }
 
 INSTANTIATE_TEST_SUITE_P(
@@ -75,3 +87,64 @@ INSTANTIATE_TEST_SUITE_P(
 INSTANTIATE_TEST_SUITE_P(
     Invalid_operation, InvalidParssingTest,
     ::testing::Values(R"({"first": 15, "second": 15, "operation": "foo"})"));
+
+TEST(ValidateInputTest, IncorrectNumberOfParameters)
+{
+    // Arrange
+    const int argc = 1;
+    char arg0[] = "name";  // NOLINT
+    char* argv[] = {arg0}; // NOLINT
+    Parser sut;
+
+    // Act & Assert
+    EXPECT_THROW(sut.validateInput(argc, argv), std::logic_error); // NOLINT
+}
+
+TEST(ValidateInputTest, EmptyString)
+{
+    // Arrange
+    const int argc = 2;
+    Parser sut;
+
+    // Act & Assert
+    EXPECT_THROW(sut.validateInput(argc, nullptr), std::logic_error);
+}
+
+TEST(ValidateInputTest, FullHelpInput)
+{
+    // Arrange
+    const int argc = 2;
+    char arg0[] = "name";        // NOLINT
+    char arg1[] = "--help";      // NOLINT
+    char* argv[] = {arg0, arg1}; // NOLINT
+    Parser sut;
+
+    // Act & Assert
+    EXPECT_THROW(sut.validateInput(argc, argv), std::string); // NOLINT
+}
+
+TEST(ValidateInputTest, ShortHelpInput)
+{
+    // Arrange
+    const int argc = 2;
+    char arg0[] = "name";        // NOLINT
+    char arg1[] = "-h";          // NOLINT
+    char* argv[] = {arg0, arg1}; // NOLINT
+    Parser sut;
+
+    // Act & Assert
+    EXPECT_THROW(sut.validateInput(argc, argv), std::string); // NOLINT
+}
+
+TEST(ValidateInputTest, ValidInput)
+{
+    // Arrange
+    const int argc = 2;
+    char arg0[] = "name";        // NOLINT
+    char arg1[] = "name";        // NOLINT
+    char* argv[] = {arg0, arg1}; // NOLINT
+    Parser sut;
+
+    // Act & Assert
+    EXPECT_NO_THROW(sut.validateInput(argc, argv)); // NOLINT
+}
