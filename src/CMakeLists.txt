@@ -1,8 +1,17 @@
 set(SOURCES
-    application.cpp
-    logger.cpp
-    parser.cpp
+    app/application.cpp
+    app/calculator.cpp
+    database/connection.cpp
+    database/connection_guard.cpp
+    database/transaction.cpp
+    io/parser.cpp
+    storage/repository.cpp
+    storage/cache.cpp
+    storage/connection_pool.cpp
+    utils/logger.cpp
 )
+
+find_package(PostgreSQL REQUIRED)
 
 add_library(calc_core STATIC
     ${SOURCES}
@@ -15,4 +24,6 @@ target_include_directories(calc_core PUBLIC
 target_link_libraries(calc_core
     PRIVATE third_party
     PUBLIC calc_warnings
+    PRIVATE PostgreSQL::PostgreSQL
+    PRIVATE coverage_flags
 )

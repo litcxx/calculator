@@ -12,21 +12,35 @@ set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
 # --- COMMON COMPILER SETTINGS ---
 add_library(calc_warnings INTERFACE)
 
+option(USE_SANITIZERS "Enable Address and Undefined sanitizers" ON)
+option(USE_VALGRIND "Enable Valgrind targets (automatically disables sanitizers)" OFF)
+
+if(USE_VALGRIND AND USE_SANITIZERS)
+    message(STATUS "Valgrind is enabled. Disabling conflicting sanitizers.")
+    set(USE_SANITIZERS OFF)
+endif()
+
 set(DEBUG_FLAGS
     -Wall -Wextra -Wpedantic
     -Wconversion -Wsign-conversion
     -Wold-style-cast -Werror -g
-    -fsanitize=address,undefined
+    -fno-omit-frame-pointer
 )
+
+if(USE_SANITIZERS)
+    list(APPEND DEBUG_FLAGS -fsanitize=address,undefined)
+endif()
 
 target_compile_options(calc_warnings INTERFACE
     "$<$<CONFIG:Debug>:${DEBUG_FLAGS}>"
-    $<$<CONFIG:Release>:-O2>
+    $<$<CONFIG:Release>:-O3 -fno-omit-frame-pointer -g>
 )
 
-target_link_options(calc_warnings INTERFACE
-    $<$<CONFIG:Debug>:-fsanitize=address,undefined>
-)
+if(USE_SANITIZERS)
+    target_link_options(calc_warnings INTERFACE
+        $<$<CONFIG:Debug>:-fsanitize=address,undefined>
+    )
+endif()
 
 # --- SUBDIRECTORIES ---
 add_subdirectory(third_party)
@@ -43,15 +57,13 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 # --- TESTS ---
 if (BUILD_TESTING)
     enable_testing()
-    add_subdirectory(test/unit)
+    add_subdirectory(test)
 endif()
 
 # --- CLANG-FORMAT ---
 if (USE_CLANG_FORMAT)
     find_program(CLANG_FORMAT NAMES clang-format-21)
     if (CLANG_FORMAT)
-        message(STATUS "Found clang-format-21: ${CLANG_FORMAT}")
-
         file(GLOB_RECURSE CLANG_FORMAT_SRC CONFIGURE_DEPENDS
             ${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp
             ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
@@ -69,6 +81,8 @@ if (USE_CLANG_FORMAT)
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
             COMMENT "Checking format ${PROJECT_NAME} with ${CLANG_FORMAT} ..."
         )
+    else()
+        message(WARNING "clang-format-21 is not found: ${CLANG_FORMAT}")
     endif()
 endif()
 
@@ -77,12 +91,8 @@ if (USE_CLANG_TIDY)
     find_program(CLANG_TIDY NAMES clang-tidy-21)
 
     if(CLANG_TIDY)
-        message(STATUS "Found clang-tidy-21: ${CLANG_TIDY}")
-
         file(GLOB_RECURSE CLANG_TIDY_SRC CONFIGURE_DEPENDS
-            ${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp
             ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/test/unit/*.cpp
         )
 
         add_custom_target(clang-tidy
@@ -93,7 +103,67 @@ if (USE_CLANG_TIDY)
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
             COMMENT "Running clang-tidy ..."
         )
+    else()
+        message(WARNING "clang-tidy-21 is not found: ${CLANG_TIDY}")
     endif()
+endif()
+
+# --- COVERAGE CONFIGURATION ---
+add_library(coverage_flags INTERFACE)
+
+if (ENABLE_COVERAGE)
+
+    target_compile_options(coverage_flags INTERFACE
+        --coverage
+        -O0
+        -g
+        -fprofile-arcs
+        -ftest-coverage
+        -fno-elide-constructors
+    )
+
+    target_link_options(coverage_flags INTERFACE
+        --coverage
+    )
+
+    find_program(GCOVR_BIN gcovr)
+    find_program(GCOV_BIN NAMES gcov-14 gcov)
+
+    if (GCOVR_BIN AND GCOV_BIN)
+
+        set(GCOVR_FILTERS
+            --filter "${CMAKE_SOURCE_DIR}/src/"
+            --filter "${CMAKE_SOURCE_DIR}/include/"
+            --exclude-throw-branches
+        )
+
+        add_custom_target(coverage-report
+            COMMAND ${GCOVR_BIN}
+                --root ${CMAKE_SOURCE_DIR}
+                --object-directory ${CMAKE_BINARY_DIR}
+                ${GCOVR_FILTERS}
+                --gcov-executable ${GCOV_BIN}
+                --print-summary
+            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        )
+
+        add_custom_target(coverage-html
+            COMMAND ${GCOVR_BIN}
+                --root ${CMAKE_SOURCE_DIR}
+                --object-directory ${CMAKE_BINARY_DIR}
+                ${GCOVR_FILTERS}
+                --gcov-executable ${GCOV_BIN}
+                --html-details coverage.html
+            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        )
+
+    elseif(NOT GCOVR_BIN)
+        message(WARNING "gcovr is not found")
+
+    elseif(NOT GCOV_BIN)
+        message(WARNING "gcov is not found")
+    endif()
+
 endif()
 
 # --- SETUP INSTALL ---
