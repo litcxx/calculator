@@ -1,0 +1,49 @@
+@startuml
+autonumber
+
+actor Input
+participant Application
+participant Parser
+participant Repository
+participant Cache
+participant Calculator
+database Database
+participant Transaction
+participant Printer
+
+== Warmup ==
+Repository -> Database : fetchAll()
+Database -> Transaction : fetchAll()
+Transaction --> Database : tasks
+Database --> Repository : tasks
+Repository -> Cache : preload(tasks)
+
+== Request flow ==
+Input -> Application : input
+Application -> Parser : parse(input)
+Parser --> Application : Request
+
+Application -> Repository : get(Request)
+
+alt CACHE HIT
+    Repository -> Cache : get(Request)
+    Cache --> Repository : Task
+    Repository --> Application : Task
+else CACHE MISS
+    Repository -> Cache : miss
+    Cache --> Repository : null
+
+    Repository -> Calculator : calculate(Request)
+    Calculator --> Repository : Task
+
+    Repository -> Database : save(Task)
+    Database -> Transaction : record(Task)
+    Database -> Transaction : commit()
+
+    Repository -> Cache : insert(Task)
+    Repository --> Application : Task
+end
+
+Application -> Printer : print(Task)
+
+@enduml
