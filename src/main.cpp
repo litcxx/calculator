@@ -1,5 +1,6 @@
 #include "app/application.hpp"
 #include "app/calculator.hpp"
+#include "database/db_config.hpp"
 #include "io/parser.hpp"
 #include "io/stdout_printer.hpp"
 #include "storage/cache.hpp"
@@ -18,9 +19,10 @@ int main(int argc, char** argv)
 {
     try
     {
+        const Config config = getConfig();
+
         Cache cache;
-        ConnectionPool pool(1, Config{"localhost", "5433", "calculatordb",
-                                      "user123", "user123"});
+        ConnectionPool pool(1, config);
 
         auto repository =
             std::make_unique<Repository>(std::move(pool), std::move(cache));

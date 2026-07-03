@@ -1,20 +1,12 @@
 #ifndef CONNECTION_HPP_
 #define CONNECTION_HPP_
 
+#include "database/db_config.hpp"
+
 #include <memory>
-#include <string>
 
 namespace calculator
 {
-struct Config
-{
-    std::string host;
-    std::string port;
-    std::string dbname;
-    std::string username;
-    std::string password;
-};
-
 class Connection
 {
   public:
