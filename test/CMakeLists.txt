@@ -21,6 +21,9 @@ set(INTEGRATION_SOURCES
     integration/transaction.cpp
     integration/connection_guard.cpp
     integration/connection_pool.cpp
+)
+
+set(INTEGRATION_COMMIT_SOURCES
     integration/repository.cpp
 )
 
@@ -36,6 +39,7 @@ target_link_libraries(unit_tests PRIVATE
 )
 
 find_package(PostgreSQL REQUIRED)
+
 add_executable(integration_tests ${INTEGRATION_SOURCES})
 
 target_link_libraries(integration_tests PRIVATE
@@ -49,6 +53,18 @@ target_link_libraries(integration_tests PRIVATE
     PRIVATE third_party
 )
 
+add_executable(integration_commit_tests ${INTEGRATION_COMMIT_SOURCES})
+target_link_libraries(integration_commit_tests PRIVATE
+    coverage_flags
+    calc_core
+    calc_warnings
+    gtest
+    gtest_main
+    PRIVATE PostgreSQL::PostgreSQL
+    PRIVATE third_party
+)
+
+
 include(GoogleTest)
 
 gtest_discover_tests(unit_tests
@@ -57,6 +73,10 @@ gtest_discover_tests(unit_tests
 
 gtest_discover_tests(integration_tests
     PROPERTIES LABELS "integration"
+)
+
+gtest_discover_tests(integration_commit_tests
+    PROPERTIES LABELS "integration-commit"
 )
 
 # --- VALGRIND ---
@@ -82,6 +102,13 @@ if(USE_VALGRIND)
         add_custom_target(valgrind-integration
             COMMAND ${VALGRIND_BIN} ${VALGRIND_OPTS} $<TARGET_FILE:integration_tests>
             DEPENDS integration_tests
+            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+            COMMENT "Running integration tests with Valgrind..."
+        )
+
+        add_custom_target(valgrind-integration-commit
+            COMMAND ${VALGRIND_BIN} ${VALGRIND_OPTS} $<TARGET_FILE:integration_commit_tests>
+            DEPENDS integration_commit_tests
             WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
             COMMENT "Running integration tests with Valgrind..."
         )
