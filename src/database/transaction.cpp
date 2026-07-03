@@ -29,7 +29,8 @@ constexpr const char* kFetchQueryAddMul =
     "SELECT result, status FROM tasks WHERE (first_value=$1 AND "
     "second_value=$2 OR first_value=$2 AND second_value=$1) AND operation=$3";
 
-constexpr const char* kBeginTransaction = "BEGIN TRANSACTION;";
+constexpr const char* kBeginTransaction =
+    "BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED;";
 constexpr const char* kCommitTransaction = "COMMIT;";
 constexpr const char* kRollbackTransaction = "ROLLBACK;";
 

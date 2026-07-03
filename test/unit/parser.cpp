@@ -6,8 +6,8 @@
 
 #include <gtest/gtest.h>
 
-using namespace calculator; // NOLINT
-
+namespace calculator
+{
 namespace
 {
 struct ParserMetadata
@@ -148,3 +148,4 @@ TEST(ValidateInputTest, ValidInput)
     // Act & Assert
     EXPECT_NO_THROW(sut.validateInput(argc, argv)); // NOLINT
 }
+} // namespace calculator

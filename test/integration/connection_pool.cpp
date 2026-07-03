@@ -6,8 +6,8 @@
 
 #include <gtest/gtest.h>
 
-using namespace calculator; //NOLINT
-
+namespace calculator::test
+{
 TEST(ConnectionPoolTest, InitEmptyPool)
 {
     // Arrage
@@ -22,7 +22,7 @@ TEST(ConnectionPoolTest, InitMultipleConnection)
 {
     // Arrage
     const std::size_t count = 10;
-    ConnectionPool sut(count, test::kDBValidConfig);
+    ConnectionPool sut(count, TestConfig::config());
 
     // Act & Assert
     ASSERT_FALSE(sut.empty());
@@ -37,7 +37,7 @@ TEST(ConnectionPoolTest, InitMultipleConnection)
 TEST(ConnectionPoolTest, ReleaseConnection)
 {
     // Arrage
-    Connection conn(test::kDBValidConfig);
+    Connection conn(TestConfig::config());
     ConnectionPool sut;
 
     // Act & Assert
@@ -45,3 +45,4 @@ TEST(ConnectionPoolTest, ReleaseConnection)
     sut.release(std::move(conn));
     EXPECT_FALSE(sut.empty());
 }
+} // namespace calculator::test

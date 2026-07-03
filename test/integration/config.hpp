@@ -1,10 +1,16 @@
-#include "database/connection.hpp"
+#include "database/db_config.hpp"
+
+using namespace calculator; // NOLINT
 
 namespace calculator::test
 {
-inline const Config kDBValidConfig = {"localhost", "5433", "test_calculatordb",
-                                      "user123", "user123"};
-
-inline const Config kDBInvalidValidConfig = {"foo_host", "foo_port", "foo_db",
-                                             "foo_user", "foo_password"};
+class TestConfig
+{
+  public:
+    static Config& config()
+    {
+        static Config cfg = getConfig();
+        return cfg;
+    }
+};
 } // namespace calculator::test

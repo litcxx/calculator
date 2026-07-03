@@ -14,13 +14,13 @@
 
 #include <gtest/gtest.h>
 
-using namespace calculator; // NOLINT
-
+namespace calculator::test
+{
 namespace
 {
 void clearValue(int firstValue, int secondValue, int sum)
 {
-    Connection conn(test::kDBValidConfig);
+    Connection conn(TestConfig::config());
     auto* connPtr = static_cast<PGconn*>(conn.get());
     PGresult* res = PQexec(
         connPtr, fmt::format("DELETE FROM tasks WHERE first_value={} AND "
@@ -49,13 +49,13 @@ TEST(RepositoryTest, GetTaskFromWarmupCache)
     ConnectionPool pool;
     {
         Transaction transction(
-            ConnectionGuard(Connection(test::kDBValidConfig), pool));
+            ConnectionGuard(Connection(TestConfig::config()), pool));
         transction.record(task);
         transction.commit();
     }
 
     // Act
-    Repository sut(ConnectionPool(1, test::kDBValidConfig), Cache());
+    Repository sut(ConnectionPool(1, TestConfig::config()), Cache());
     auto result = sut.get(request);
 
     // Assert
@@ -79,7 +79,7 @@ TEST(RepositoryTest, SaveTaskAndGetFromCache)
         });
 
     // Act
-    Repository sut(ConnectionPool(1, test::kDBValidConfig), Cache());
+    Repository sut(ConnectionPool(1, TestConfig::config()), Cache());
     sut.save(task);
     auto result = sut.get(request);
 
@@ -87,3 +87,4 @@ TEST(RepositoryTest, SaveTaskAndGetFromCache)
     ASSERT_TRUE(result.has_value());
     EXPECT_EQ(result.value(), task);
 }
+} // namespace calculator::test

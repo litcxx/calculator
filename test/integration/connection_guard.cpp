@@ -5,12 +5,12 @@
 
 #include <gtest/gtest.h>
 
-using namespace calculator; // NOLINT
-
-TEST(ConnectionLeaseTest, Dtor)
+namespace calculator::test
+{
+TEST(ConnectionGuardTest, Dtor)
 {
     // Arrange
-    ConnectionPool pool(1, test::kDBValidConfig);
+    ConnectionPool pool(1, TestConfig::config());
 
     // Act & Assert
     ASSERT_FALSE(pool.empty());
@@ -20,3 +20,4 @@ TEST(ConnectionLeaseTest, Dtor)
     }
     ASSERT_FALSE(pool.empty());
 }
+} // namespace calculator::test

@@ -11,8 +11,8 @@
 #include "gmock/gmock.h"
 #include <gtest/gtest.h>
 
-using namespace calculator; // NOLINT
-
+namespace calculator::test
+{
 namespace
 {
 class MockRepository : public IRepository
@@ -115,3 +115,4 @@ TEST(ApplicationTest, RunCacheMiss)
     EXPECT_CALL(mockRepository, save(task)).Times(1);
     sut.run(argc, argv); // NOLINT
 }
+} // namespace calculator::test

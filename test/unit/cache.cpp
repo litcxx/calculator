@@ -4,8 +4,8 @@
 
 #include <gtest/gtest.h>
 
-using namespace calculator; // NOLINT
-
+namespace calculator::test
+{
 TEST(CacheTest, InsertElement)
 {
     // Arrange
@@ -68,3 +68,4 @@ TEST(CacheTest, GetReverseRequestForMul)
     ASSERT_TRUE(result.has_value());
     EXPECT_EQ(result.value(), task);
 }
+} // namespace calculator::test

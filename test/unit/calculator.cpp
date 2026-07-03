@@ -6,8 +6,8 @@
 
 #include <gtest/gtest.h>
 
-using namespace calculator; // NOLINT
-
+namespace calculator::test
+{
 TEST(CalculatorTest, AddSuccess)
 {
     // Arrange
@@ -130,3 +130,4 @@ TEST(CalculatorTest, InvalidNumber)
     // Assert
     EXPECT_EQ(result.status, Status::InvalidNumber);
 }
+} // namespace calculator::test

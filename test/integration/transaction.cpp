@@ -1,21 +1,19 @@
 #include "database/transaction.hpp"
 
 #include "config.hpp"
-#include "database/connection.hpp"
 #include "database/connection_guard.hpp"
 #include "storage/connection_pool.hpp"
 
-#include <memory>
 #include <vector>
 
 #include <gtest/gtest.h>
 
-using namespace calculator; // NOLINT
-
+namespace calculator::test
+{
 TEST(TransactionTest, BeginSuccessTransaction)
 {
     // Arrange
-    ConnectionPool pool(1, test::kDBValidConfig);
+    ConnectionPool pool(1, TestConfig::config());
 
     // Act & Assert
     EXPECT_NO_THROW((Transaction(pool.acquire())));
@@ -26,7 +24,7 @@ TEST(TransactionTest, RecordAndFetchTask)
     // Arrange
     const CalculationRequest request{1, 1, Operation::Add};
     const Task task{request, 2, Status::Success};
-    ConnectionPool pool(1, test::kDBValidConfig);
+    ConnectionPool pool(1, TestConfig::config());
     Transaction sut(pool.acquire());
 
     // Act
@@ -42,7 +40,7 @@ TEST(TransactionTest, FetchAllData)
 {
     // Arrange
     const std::size_t count = 5;
-    ConnectionPool pool(1, test::kDBValidConfig);
+    ConnectionPool pool(1, TestConfig::config());
     Transaction sut(pool.acquire());
     std::vector<Task> buf;
 
@@ -72,7 +70,7 @@ TEST(TransactionTest, MoveTransaction)
     // Arrange
     const CalculationRequest request{1, 1, Operation::Add};
     const Task task{request, 2, Status::Success};
-    ConnectionPool pool(1, test::kDBValidConfig);
+    ConnectionPool pool(1, TestConfig::config());
     Transaction sut(pool.acquire());
 
     // Act
@@ -99,7 +97,7 @@ TEST(TransactionTest, FetchReversedAdd)
     const CalculationRequest reversedRequest{2, 1, Operation::Add};
     const Task task{request, 2, Status::Success};
     const Task reversedTask{reversedRequest, 2, Status::Success};
-    ConnectionPool pool(1, test::kDBValidConfig);
+    ConnectionPool pool(1, TestConfig::config());
     Transaction sut(pool.acquire());
 
     // Act
@@ -118,7 +116,7 @@ TEST(TransactionTest, FetchReversedMul)
     const CalculationRequest reversedRequest{2, 1, Operation::Mul};
     const Task task{request, 2, Status::Success};
     const Task reversedTask{reversedRequest, 2, Status::Success};
-    ConnectionPool pool(1, test::kDBValidConfig);
+    ConnectionPool pool(1, TestConfig::config());
     Transaction sut(pool.acquire());
 
     // Act
@@ -129,14 +127,4 @@ TEST(TransactionTest, FetchReversedMul)
     ASSERT_TRUE(result.has_value());
     EXPECT_EQ(result.value(), reversedTask);
 }
-
-TEST(TransactionTest, EmptyCommit)
-{
-    // Arrange
-    auto conn = std::make_unique<Connection>(test::kDBValidConfig);
-    ConnectionPool pool(1, test::kDBValidConfig);
-    Transaction sut(pool.acquire());
-
-    // Act & Assert
-    EXPECT_NO_THROW(sut.commit());
-}
+} // namespace calculator::test

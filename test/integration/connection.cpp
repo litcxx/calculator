@@ -1,26 +1,27 @@
-#include "config.hpp"
 #include "database/connection.hpp"
+
+#include "config.hpp"
 
 #include <gtest/gtest.h>
 
-using namespace calculator; // NOLINT
-
+namespace calculator::test
+{
 TEST(ConnectionTest, SuccessConnect)
 {
     // Arrange & Act & Assert
-    EXPECT_NO_THROW((Connection{test::kDBValidConfig}));
+    EXPECT_NO_THROW(Connection{TestConfig::config()});
 }
 
 TEST(ConnectionTest, FailedConnect)
 {
     // Arrange & Act & Assert
-    EXPECT_THROW((Connection{test::kDBInvalidValidConfig}), std::runtime_error);
+    EXPECT_THROW(Connection{Config{}}, std::runtime_error);
 }
 
 TEST(ConnectionTest, GetConnection)
 {
     // Arrange
-    Connection sut{test::kDBValidConfig};
+    Connection sut{TestConfig::config()};
 
     // Act
     auto* conn = sut.get();
@@ -32,7 +33,7 @@ TEST(ConnectionTest, GetConnection)
 TEST(ConnectionTest, MoveConnection)
 {
     // Arrange
-    Connection sut{test::kDBValidConfig};
+    Connection sut{TestConfig::config()};
 
     // Act & assert
     Connection sut2(std::move(sut));
@@ -48,3 +49,4 @@ TEST(ConnectionTest, MoveConnection)
     EXPECT_NE(oldConn, nullptr);
     EXPECT_EQ(newConn, nullptr);
 }
+} // namespace calculator::test
