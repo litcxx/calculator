@@ -1,0 +1,37 @@
+{
+   gtest_printer_uninit_value
+   Memcheck:Value8
+   fun:_itoa_word
+   fun:__printf_buffer
+   ...
+   obj:*/libgtest.a
+}
+{
+   gtest_printer_uninit_cond
+   Memcheck:Cond
+   fun:_itoa_word
+   ...
+   obj:*/libgtest.a
+}
+
+{
+   libpq_crypto_leak
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   obj:*/libcrypto.so.*
+}
+{
+   libpq_krb5_leak
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   obj:*/libgssapi_krb5.so.*
+}
+{
+   libpq_krb5support_leak
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   obj:*/libkrb5support.so.*
+}

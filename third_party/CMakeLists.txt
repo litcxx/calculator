@@ -16,6 +16,13 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(nlohmann_json)
 
+# Fetch fmtlib/fmt
+FetchContent_Declare(
+    fmt
+    URL https://github.com/fmtlib/fmt/archive/refs/tags/12.0.0.tar.gz
+)
+FetchContent_MakeAvailable(fmt)
+
 # Fetch gabime/spdlog
 FetchContent_Declare(
     spdlog
@@ -26,6 +33,7 @@ FetchContent_MakeAvailable(spdlog)
 add_library(third_party INTERFACE)
 target_link_libraries(third_party INTERFACE
     litmath
-    nlohmann_json
-    spdlog
+    nlohmann_json::nlohmann_json
+    spdlog::spdlog
+    fmt::fmt
 )

@@ -1,0 +1,98 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+class Application {
+  - IRepository
+  - IParser
+  - ICalculator
+  - IPrinter
+
+  + run()
+}
+
+' --- Interfaces ---
+
+interface IRepository {
+  + get(Request) : Task
+  + save(Task)
+}
+
+interface IParser {
+  + parse(json) : Request
+}
+
+interface ICalculator {
+  + calculate(Request) : Task
+}
+
+interface IPrinter {
+  + print(Task)
+}
+
+' --- Implementations ---
+
+class JsonParser {}
+class Calculator {}
+class StdoutPrinter {}
+
+class Repository {
+  - ConnectionPool
+  - Cache
+  + save(Task)
+  + get(Request) : optional<Task>
+}
+
+' --- (Concrete RAII Classes) ---
+
+class ConnectionGuard {
+  - Connection
+  - ConnectionPool&
+  + get() : void*
+}
+
+class Connection {
+  + get() : void*
+}
+
+class Transaction {
+  + fetch(Request) : optional<Task>
+  + fetchAll()
+  + record(Task)
+  + commit()
+}
+
+' --- Storage ---
+
+class ConnectionPool {
+  - deque<Connection>
+  + acquire() : ConnectionGuard
+  + release(Connection)
+}
+
+class Cache {
++ get(Request) : optional<Task>
++ insert(Task)
+}
+
+' --- Relationships ---
+
+' Interface Realizations
+Repository      ..|> IRepository
+JsonParser      ..|> IParser
+Calculator      ..|> ICalculator
+StdoutPrinter   ..|> IPrinter
+
+' Application Dependencies
+Application --> IRepository
+Application --> IParser
+Application --> ICalculator
+Application --> IPrinter
+
+' Infrastructure Composition
+Repository *-- ConnectionPool : has-a >
+Repository *-- Cache  : has-a >
+ConnectionPool ..> ConnectionGuard : creates >
+ConnectionGuard --> Connection : manages >
+Transaction ..> ConnectionGuard : uses >
+
+@enduml

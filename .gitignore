@@ -39,7 +39,10 @@
 
 # debug information files
 *.dwo
+*.gcov
 
 #
 /build
 .vscode
+/Testing
+perf*

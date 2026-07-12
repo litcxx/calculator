@@ -42,5 +42,7 @@ cmake --build build
 
 ## Run tests
 ```bash
-ctest --test-dir build
+ctest -L unit --test-dir build -j4 --output-on-failure
+ctest -L integration --test-dir build -j4 --output-on-failure
+ctest -L integration_commit --test-dir build -j4 --output-on-failure
 ```
