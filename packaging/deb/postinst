@@ -1,0 +1,14 @@
+#!/bin/sh
+set -e
+
+# Create the unprivileged system user the service runs as.
+getent group calc >/dev/null || addgroup --system calc
+getent passwd calc >/dev/null || \
+    adduser --system --ingroup calc --no-create-home --shell /usr/sbin/nologin calc
+
+# Pick up the newly installed unit file.
+if command -v systemctl >/dev/null 2>&1; then
+    systemctl daemon-reload || true
+fi
+
+exit 0

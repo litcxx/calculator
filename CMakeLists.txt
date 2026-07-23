@@ -177,3 +177,27 @@ install(FILES packaging/calc.service
 install(FILES packaging/calc.env
     DESTINATION /etc/calc
 )
+
+# --- CPACK (deb package) ---
+set(CPACK_GENERATOR "DEB")
+set(CPACK_PACKAGE_NAME "calc")
+set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "calc calculation service")
+set(CPACK_PACKAGE_CONTACT "maintainer@example.com")
+set(CPACK_PACKAGING_INSTALL_PREFIX "/usr")           # binary -> /usr/bin
+
+set(CPACK_DEBIAN_PACKAGE_SECTION "utils")
+set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
+# Runtime deps auto-detected from the linked shared libraries (libpq, libstdc++, ...).
+set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+
+# Maintainer scripts (create service user, daemon-reload, stop on removal) and
+# the conffiles list so dpkg preserves edits to /etc/calc/calc.env on upgrade.
+set(CPACK_DEBIAN_PACKAGE_CONTROL_STRICT_PERMISSION ON)
+set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
+    "${CMAKE_SOURCE_DIR}/packaging/deb/postinst"
+    "${CMAKE_SOURCE_DIR}/packaging/deb/prerm"
+    "${CMAKE_SOURCE_DIR}/packaging/deb/postrm"
+    "${CMAKE_SOURCE_DIR}/packaging/deb/conffiles")
+
+include(CPack)
