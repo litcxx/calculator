@@ -20,6 +20,12 @@ if(USE_VALGRIND AND USE_SANITIZERS)
     set(USE_SANITIZERS OFF)
 endif()
 
+option(USE_TSAN "Enable ThreadSanitizer (mutually exclusive with ASan)" OFF)
+
+if(USE_TSAN)
+    set(USE_SANITIZERS OFF)
+endif()
+
 set(DEBUG_FLAGS
     -Wall -Wextra -Wpedantic
     -Wconversion -Wsign-conversion
@@ -31,6 +37,12 @@ if(USE_SANITIZERS)
     list(APPEND DEBUG_FLAGS -fsanitize=address,undefined)
 endif()
 
+if(USE_TSAN)
+    # -Wno-tsan: silence the benign "atomic_thread_fence not supported" note that
+    # library headers trigger under TSan; -Werror would otherwise reject it.
+    list(APPEND DEBUG_FLAGS -fsanitize=thread -Wno-tsan)
+endif()
+
 target_compile_options(calc_warnings INTERFACE
     "$<$<CONFIG:Debug>:${DEBUG_FLAGS}>"
     $<$<CONFIG:Release>:-O3 -fno-omit-frame-pointer -g>
@@ -39,6 +51,12 @@ target_compile_options(calc_warnings INTERFACE
 if(USE_SANITIZERS)
     target_link_options(calc_warnings INTERFACE
         $<$<CONFIG:Debug>:-fsanitize=address,undefined>
+    )
+endif()
+
+if(USE_TSAN)
+    target_link_options(calc_warnings INTERFACE
+        $<$<CONFIG:Debug>:-fsanitize=thread>
     )
 endif()
 
