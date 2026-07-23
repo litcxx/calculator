@@ -13,7 +13,8 @@ set(UNIT_SOURCES
     unit/parser.cpp
     unit/cache.cpp
     unit/calculator.cpp
-    unit/application.cpp
+    unit/response.cpp
+    unit/request_handler.cpp
 )
 
 set(INTEGRATION_SOURCES
