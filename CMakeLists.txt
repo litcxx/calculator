@@ -171,3 +171,9 @@ include(GNUInstallDirs)
 install(TARGETS ${PROJECT_NAME}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
+install(FILES packaging/calc.service
+    DESTINATION /lib/systemd/system
+)
+install(FILES packaging/calc.env
+    DESTINATION /etc/calc
+)

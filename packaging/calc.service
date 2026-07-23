@@ -1,0 +1,18 @@
+[Unit]
+Description=calc calculation service
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/calc/calc.env
+ExecStart=/usr/bin/calc
+Restart=on-failure
+RestartSec=2
+KillSignal=SIGTERM
+TimeoutStopSec=10
+User=calc
+Group=calc
+
+[Install]
+WantedBy=multi-user.target
