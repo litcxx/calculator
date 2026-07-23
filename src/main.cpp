@@ -1,49 +1,30 @@
-#include "app/application.hpp"
-#include "app/calculator.hpp"
-#include "database/db_config.hpp"
-#include "io/parser.hpp"
-#include "io/stdout_printer.hpp"
-#include "storage/cache.hpp"
-#include "storage/connection_pool.hpp"
-#include "storage/repository.hpp"
 #include "utils/logger.hpp"
+#include "utils/signal_handler.hpp"
 
 #include <cstdlib>
 #include <exception>
-#include <iostream>
-#include <memory>
 
 using namespace calculator; // NOLINT
 
-int main(int argc, char** argv)
+// The service runs until it receives SIGTERM (or SIGINT), then shuts down
+// gracefully. Request processing over the network is added in a later step;
+// here the worker (main) thread simply waits for the termination signal.
+int main()
 {
     try
     {
-        const Config config = getConfig();
+        SignalHandler signals; // (1) block signals in the main thread FIRST
+        signals.start();       // (2) dedicated signal thread (thread #1)
 
-        Cache cache;
-        ConnectionPool pool(1, config);
+        Logger::getInstance().info("Service started (waiting for SIGTERM)");
 
-        auto repository =
-            std::make_unique<Repository>(std::move(pool), std::move(cache));
+        signals.waitForShutdown(); // worker thread (#2) blocks until signalled
 
-        Application application(
-            std::move(repository), std::make_unique<Parser>(),
-            std::make_unique<Calculator>(), std::make_unique<StdoutPrinter>());
-        application.run(argc, argv);
+        Logger::getInstance().info("SIGTERM received, shutting down gracefully");
     }
     catch (const std::exception& ec)
     {
-        calculator::Logger::getInstance().error(ec.what());
-        return EXIT_FAILURE;
-    }
-    catch (const std::string& str)
-    {
-        std::cout << str << '\n';
-    }
-    catch (...)
-    {
-        calculator::Logger::getInstance().error("Unknown error\n");
+        Logger::getInstance().error(ec.what());
         return EXIT_FAILURE;
     }
     return EXIT_SUCCESS;

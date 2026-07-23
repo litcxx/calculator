@@ -9,9 +9,11 @@ set(SOURCES
     storage/cache.cpp
     storage/connection_pool.cpp
     utils/logger.cpp
+    utils/signal_handler.cpp
 )
 
 find_package(PostgreSQL REQUIRED)
+find_package(Threads REQUIRED)
 
 add_library(calc_core STATIC
     ${SOURCES}
@@ -25,5 +27,6 @@ target_link_libraries(calc_core
     PRIVATE third_party
     PUBLIC calc_warnings
     PRIVATE PostgreSQL::PostgreSQL
+    PUBLIC Threads::Threads
     PRIVATE coverage_flags
 )
