@@ -145,7 +145,17 @@ if (ENABLE_COVERAGE)
     )
 
     find_program(GCOVR_BIN gcovr)
-    find_program(GCOV_BIN NAMES gcov-14 gcov)
+
+    # gcov MUST match the compiler that produced the .gcno/.gcda data, or it
+    # fails with a version mismatch (e.g. data 'B61*' vs gcov 'B43*') and gcovr
+    # aborts with "GCOV returncode was 3". Derive it from the compiler: look
+    # next to it and for a version-matched name before the unversioned gcov.
+    get_filename_component(GCC_BIN_DIR "${CMAKE_CXX_COMPILER}" DIRECTORY)
+    string(REGEX MATCH "^[0-9]+" GCC_MAJOR "${CMAKE_CXX_COMPILER_VERSION}")
+    find_program(GCOV_BIN
+        NAMES gcov-${GCC_MAJOR} gcov
+        HINTS "${GCC_BIN_DIR}"
+    )
 
     if (GCOVR_BIN AND GCOV_BIN)
 
