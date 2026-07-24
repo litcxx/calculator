@@ -19,11 +19,45 @@ A C++ TCP service that evaluates integer calculations, backed by PostgreSQL and 
 ### Optional tools
 - Clang 21+ (clang-tidy, clang-format)
 
-## Install
+## Install (from source)
 ```bash
 cd calculator
 cmake -B build -DCMAKE_BUILD_TYPE=Release
 sudo cmake --build build --target install
+```
+
+## Debian package
+
+Build a `.deb` with CPack and install the service system-wide:
+
+```bash
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j8
+( cd build && cpack -G DEB )                  # -> build/calc-2.0-Linux.deb
+
+sudo apt install ./build/calc-2.0-Linux.deb   # pulls in libpq5 and friends
+```
+
+It installs the binary, config and systemd unit, and creates the unprivileged
+`calc` user the service runs as:
+
+```
+/usr/bin/calc
+/etc/calc/calc.env                 # conffile: DB_* and CALC_PORT
+/lib/systemd/system/calc.service
+```
+
+Point it at a reachable PostgreSQL (apply `migrations/tasks.sql` once), then
+manage it with systemd:
+
+```bash
+sudoedit /etc/calc/calc.env          # DB_HOST/PORT/NAME/USER/PASSWORD, CALC_PORT
+sudo systemctl enable --now calc     # start now and on boot
+sudo systemctl restart calc
+sudo systemctl stop calc             # SIGTERM -> graceful shutdown
+journalctl -u calc -f                # follow logs
+
+sudo apt remove calc                 # stops, disables and removes the service
 ```
 
 ## Run
@@ -39,7 +73,6 @@ Success : 5
 
 Operations: `add`, `sub`, `mul`, `div`, `pow`, `fact`. It is also packaged as a
 systemd service (see `packaging/`).
-
 
 ## Build
 
