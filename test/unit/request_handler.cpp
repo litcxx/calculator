@@ -88,7 +88,8 @@ TEST(RequestHandlerTest, CacheMissCalculatesAndSaves)
               "Success : 5\n");
 }
 
-TEST(RequestHandlerTest, InvalidRequestReturnsErrorLineAndDoesNotTouchRepository)
+TEST(RequestHandlerTest,
+     InvalidRequestReturnsErrorLineAndDoesNotTouchRepository)
 {
     auto repository = std::make_unique<MockRepository>();
     auto parser = std::make_unique<MockParser>();
@@ -96,7 +97,8 @@ TEST(RequestHandlerTest, InvalidRequestReturnsErrorLineAndDoesNotTouchRepository
     MockRepository& mockRepo = *repository;
     MockParser& mockParser = *parser;
 
-    EXPECT_CALL(mockParser, parse(_)).WillOnce(Throw(std::logic_error("bad json")));
+    EXPECT_CALL(mockParser, parse(_))
+        .WillOnce(Throw(std::logic_error("bad json")));
     EXPECT_CALL(mockRepo, get(_)).Times(0);
 
     RequestHandler handler(std::move(repository), std::move(parser),

@@ -31,15 +31,15 @@ class Session : public std::enable_shared_from_this<Session>
         auto self = shared_from_this();
         boost::asio::async_read_until(
             socket_, buffer_, '\n',
-            [this, self](const boost::system::error_code& ec, std::size_t)
-            {
-                if (ec)
+            [this, self](const boost::system::error_code& errorCode,
+                         std::size_t) {
+                if (errorCode)
                 {
                     return; // client closed or error: drop the session
                 }
-                std::istream is(&buffer_);
+                std::istream inputStream(&buffer_);
                 std::string line;
-                std::getline(is, line);
+                std::getline(inputStream, line);
                 writeResponse(handler_.handle(line));
             });
     }
@@ -50,9 +50,9 @@ class Session : public std::enable_shared_from_this<Session>
         auto self = shared_from_this();
         boost::asio::async_write(
             socket_, boost::asio::buffer(response_),
-            [this, self](const boost::system::error_code& ec, std::size_t)
-            {
-                if (ec)
+            [this, self](const boost::system::error_code& errorCode,
+                         std::size_t) {
+                if (errorCode)
                 {
                     return;
                 }
@@ -67,9 +67,9 @@ class Session : public std::enable_shared_from_this<Session>
 };
 } // namespace
 
-Server::Server(boost::asio::io_context& io, std::uint16_t port,
+Server::Server(boost::asio::io_context& ioContext, std::uint16_t port,
                RequestHandler& handler) :
-    acceptor_{io, tcp::endpoint(tcp::v4(), port)}, handler_{handler}
+    acceptor_{ioContext, tcp::endpoint(tcp::v4(), port)}, handler_{handler}
 {
     doAccept();
 }
@@ -82,9 +82,8 @@ std::uint16_t Server::port() const
 void Server::doAccept()
 {
     acceptor_.async_accept(
-        [this](const boost::system::error_code& ec, tcp::socket socket)
-        {
-            if (!ec)
+        [this](const boost::system::error_code& errorCode, tcp::socket socket) {
+            if (!errorCode)
             {
                 std::make_shared<Session>(std::move(socket), handler_)->start();
             }

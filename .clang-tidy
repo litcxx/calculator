@@ -1,3 +1,6 @@
+# misc-no-recursion is off: the Asio server uses continuation-passing async
+# handlers (readLine <-> writeResponse) that look recursive statically but are
+# separate event-loop callbacks; the check also flags Boost.Asio internals.
 Checks: '
 -*,
 bugprone-*,
@@ -7,6 +10,7 @@ cppcoreguidelines-*,
 google-*,
 misc-*,
 -misc-include-cleaner,
+-misc-no-recursion,
 modernize-*,
 -modernize-use-trailing-return-type,
 performance-*,

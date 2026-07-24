@@ -21,13 +21,15 @@ using namespace calculator; // NOLINT
 
 namespace
 {
+constexpr std::uint16_t kDefaultPort = 5555;
+
 std::uint16_t serverPort()
 {
     if (const char* env = std::getenv("CALC_PORT")) // NOLINT
     {
         return static_cast<std::uint16_t>(std::stoul(env));
     }
-    return 5555;
+    return kDefaultPort;
 }
 } // namespace
 
@@ -47,16 +49,19 @@ int main()
                                std::make_unique<Parser>(),
                                std::make_unique<Calculator>());
 
-        boost::asio::io_context io;
-        Server server(io, serverPort(), handler);
+        boost::asio::io_context ioContext;
+        // NOLINTNEXTLINE(misc-const-correctness): server mutates itself async
+        Server server(ioContext, serverPort(), handler);
 
-        signals.start([&io] { io.stop(); }); // signal thread (#1) stops the loop
+        // signal thread (#1) stops the loop
+        signals.start([&ioContext] { ioContext.stop(); });
         Logger::getInstance().info("Listening on port " +
                                    std::to_string(server.port()));
 
-        io.run(); // worker thread (#2): accept and process requests
+        ioContext.run(); // worker thread (#2): accept and process requests
 
-        Logger::getInstance().info("SIGTERM received, shutting down gracefully");
+        Logger::getInstance().info(
+            "SIGTERM received, shutting down gracefully");
     }
     catch (const std::exception& ec)
     {

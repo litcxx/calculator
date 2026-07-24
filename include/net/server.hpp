@@ -15,7 +15,7 @@ namespace calculator
 class Server
 {
   public:
-    Server(boost::asio::io_context& io, std::uint16_t port,
+    Server(boost::asio::io_context& ioContext, std::uint16_t port,
            RequestHandler& handler);
 
     std::uint16_t port() const;
