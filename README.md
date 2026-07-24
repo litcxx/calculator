@@ -1,6 +1,6 @@
 # calculator
 
-Simple C++ cli-calculator for integeres
+A C++ TCP service that evaluates integer calculations, backed by PostgreSQL and packaged as a systemd unit.
 
 ## Features
 
@@ -26,10 +26,19 @@ cmake -B build -DCMAKE_BUILD_TYPE=Release
 sudo cmake --build build --target install
 ```
 
-## Help
+## Run
+
+`calc` is a long-running service: with the `DB_*` and `CALC_PORT` (default 5555)
+environment variables set, it serves calculation requests over TCP. Send one
+JSON request per line and read one response line back:
+
 ```bash
-calc --help
+$ printf '{"first":2,"second":3,"operation":"add"}\n' | nc localhost 5555
+Success : 5
 ```
+
+Operations: `add`, `sub`, `mul`, `div`, `pow`, `fact`. It is also packaged as a
+systemd service (see `packaging/`).
 
 
 ## Build
@@ -58,6 +67,16 @@ ctest -L unit --test-dir build -j4 --output-on-failure
 ctest -L integration --test-dir build -j4 --output-on-failure
 ctest -L commit --test-dir build -j4 --output-on-failure
 ctest -L network --test-dir build -j4 --output-on-failure
+```
+
+## Lint & format
+
+Enabled by `-DUSE_CLANG_TIDY=ON` / `-DUSE_CLANG_FORMAT=ON` (Clang 21 required):
+
+```bash
+cmake --build build --target clang-tidy        # static analysis
+cmake --build build --target clang-format      # check formatting
+cmake --build build --target clang-format-fix  # apply formatting in place
 ```
 
 ## Coverage
