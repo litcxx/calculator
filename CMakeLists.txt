@@ -20,6 +20,12 @@ if(USE_VALGRIND AND USE_SANITIZERS)
     set(USE_SANITIZERS OFF)
 endif()
 
+option(USE_TSAN "Enable ThreadSanitizer (mutually exclusive with ASan)" OFF)
+
+if(USE_TSAN)
+    set(USE_SANITIZERS OFF)
+endif()
+
 set(DEBUG_FLAGS
     -Wall -Wextra -Wpedantic
     -Wconversion -Wsign-conversion
@@ -31,6 +37,12 @@ if(USE_SANITIZERS)
     list(APPEND DEBUG_FLAGS -fsanitize=address,undefined)
 endif()
 
+if(USE_TSAN)
+    # -Wno-tsan: silence the benign "atomic_thread_fence not supported" note that
+    # library headers trigger under TSan; -Werror would otherwise reject it.
+    list(APPEND DEBUG_FLAGS -fsanitize=thread -Wno-tsan)
+endif()
+
 target_compile_options(calc_warnings INTERFACE
     "$<$<CONFIG:Debug>:${DEBUG_FLAGS}>"
     $<$<CONFIG:Release>:-O3 -fno-omit-frame-pointer -g>
@@ -39,6 +51,12 @@ target_compile_options(calc_warnings INTERFACE
 if(USE_SANITIZERS)
     target_link_options(calc_warnings INTERFACE
         $<$<CONFIG:Debug>:-fsanitize=address,undefined>
+    )
+endif()
+
+if(USE_TSAN)
+    target_link_options(calc_warnings INTERFACE
+        $<$<CONFIG:Debug>:-fsanitize=thread>
     )
 endif()
 
@@ -127,7 +145,17 @@ if (ENABLE_COVERAGE)
     )
 
     find_program(GCOVR_BIN gcovr)
-    find_program(GCOV_BIN NAMES gcov-14 gcov)
+
+    # gcov MUST match the compiler that produced the .gcno/.gcda data, or it
+    # fails with a version mismatch (e.g. data 'B61*' vs gcov 'B43*') and gcovr
+    # aborts with "GCOV returncode was 3". Derive it from the compiler: look
+    # next to it and for a version-matched name before the unversioned gcov.
+    get_filename_component(GCC_BIN_DIR "${CMAKE_CXX_COMPILER}" DIRECTORY)
+    string(REGEX MATCH "^[0-9]+" GCC_MAJOR "${CMAKE_CXX_COMPILER_VERSION}")
+    find_program(GCOV_BIN
+        NAMES gcov-${GCC_MAJOR} gcov
+        HINTS "${GCC_BIN_DIR}"
+    )
 
     if (GCOVR_BIN AND GCOV_BIN)
 
@@ -171,3 +199,33 @@ include(GNUInstallDirs)
 install(TARGETS ${PROJECT_NAME}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
+install(FILES packaging/calc.service
+    DESTINATION /lib/systemd/system
+)
+install(FILES packaging/calc.env
+    DESTINATION /etc/calc
+)
+
+# --- CPACK (deb package) ---
+set(CPACK_GENERATOR "DEB")
+set(CPACK_PACKAGE_NAME "calc")
+set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "calc calculation service")
+set(CPACK_PACKAGE_CONTACT "maintainer@example.com")
+set(CPACK_PACKAGING_INSTALL_PREFIX "/usr")           # binary -> /usr/bin
+
+set(CPACK_DEBIAN_PACKAGE_SECTION "utils")
+set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
+# Runtime deps auto-detected from the linked shared libraries (libpq, libstdc++, ...).
+set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+
+# Maintainer scripts (create service user, daemon-reload, stop on removal) and
+# the conffiles list so dpkg preserves edits to /etc/calc/calc.env on upgrade.
+set(CPACK_DEBIAN_PACKAGE_CONTROL_STRICT_PERMISSION ON)
+set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
+    "${CMAKE_SOURCE_DIR}/packaging/deb/postinst"
+    "${CMAKE_SOURCE_DIR}/packaging/deb/prerm"
+    "${CMAKE_SOURCE_DIR}/packaging/deb/postrm"
+    "${CMAKE_SOURCE_DIR}/packaging/deb/conffiles")
+
+include(CPack)

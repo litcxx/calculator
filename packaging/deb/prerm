@@ -1,0 +1,10 @@
+#!/bin/sh
+set -e
+
+# Stop the service before its files are removed.
+if command -v systemctl >/dev/null 2>&1; then
+    systemctl stop calc || true
+    systemctl disable calc || true
+fi
+
+exit 0

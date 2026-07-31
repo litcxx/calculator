@@ -1,49 +1,79 @@
 @startuml
+title Calculator TCP service — request sequence
 autonumber
 
-actor Input
-participant Application
+actor Client
+participant main
+participant SignalHandler
+participant "io_context" as IO
+participant Server
+participant Session
+participant RequestHandler as Handler
 participant Parser
+participant Calculator
 participant Repository
 participant Cache
-participant Calculator
-database Database
 participant Transaction
-participant Printer
+database Database
+participant "toResponse()" as Response
 
-== Warmup ==
-Repository -> Database : fetchAll()
-Database -> Transaction : fetchAll()
-Transaction --> Database : tasks
-Database --> Repository : tasks
-Repository -> Cache : preload(tasks)
+== Startup ==
+main -> SignalHandler : start(onShutdown)
+note over SignalHandler : dedicated thread\nblocks on sigwait()
+main -> Repository : construct (warm up cache)
+activate Repository
+Repository -> Transaction : fetchAll(callback)
+Transaction -> Database : SELECT tasks
+Database --> Transaction : rows
+loop each task
+  Transaction -> Cache : insert(task)
+end
+deactivate Repository
+main -> Server : listen(port)
+main -> IO : run()
+activate IO
 
-== Request flow ==
-Input -> Application : input
-Application -> Parser : parse(input)
-Parser --> Application : Request
+== New connection ==
+Client -> Server : connect
+Server -> Session : create + start()
 
-Application -> Repository : get(Request)
+== Request flow (repeats per line) ==
+loop until client disconnects
+  Client -> Session : request line (JSON)
+  Session -> Handler : handle(json)
+  activate Handler
 
-alt CACHE HIT
-    Repository -> Cache : get(Request)
-    Cache --> Repository : Task
-    Repository --> Application : Task
-else CACHE MISS
-    Repository -> Cache : miss
-    Cache --> Repository : null
+  Handler -> Parser : parse(json)
+  Parser --> Handler : Request
 
-    Repository -> Calculator : calculate(Request)
-    Calculator --> Repository : Task
+  Handler -> Repository : get(Request)
+  Repository -> Cache : get(Request)
 
-    Repository -> Database : save(Task)
-    Database -> Transaction : record(Task)
-    Database -> Transaction : commit()
+  alt cache hit
+      Cache --> Repository : Task
+      Repository --> Handler : Task
+  else cache miss
+      Cache --> Repository : nullopt
+      Repository --> Handler : nullopt
+      Handler -> Calculator : calculate(Request)
+      Calculator --> Handler : Task
+      Handler -> Repository : save(Task)
+      Repository -> Transaction : record(Task) + commit()
+      Transaction -> Database : INSERT + COMMIT
+      Repository -> Cache : insert(Task)
+  end
 
-    Repository -> Cache : insert(Task)
-    Repository --> Application : Task
+  Handler -> Response : toResponse(Task)
+  Response --> Handler : response line
+  note over Handler : parse/compute errors are\ncaught and returned as "Error: ...\\n"
+  deactivate Handler
+  Session --> Client : response line
 end
 
-Application -> Printer : print(Task)
-
+== Shutdown ==
+[-> SignalHandler : SIGTERM / SIGINT
+SignalHandler -> IO : stop()
+IO --> main : run() returns
+deactivate IO
+main -> main : graceful exit
 @enduml

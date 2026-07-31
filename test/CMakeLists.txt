@@ -13,7 +13,8 @@ set(UNIT_SOURCES
     unit/parser.cpp
     unit/cache.cpp
     unit/calculator.cpp
-    unit/application.cpp
+    unit/response.cpp
+    unit/request_handler.cpp
 )
 
 set(INTEGRATION_SOURCES
@@ -63,6 +64,20 @@ target_link_libraries(commit_tests PRIVATE
     PRIVATE third_party
 )
 
+find_package(Boost REQUIRED)
+find_package(Threads REQUIRED)
+
+add_executable(network_tests integration/network.cpp)
+target_link_libraries(network_tests PRIVATE
+    coverage_flags
+    calc_core
+    calc_warnings
+    gtest
+    gtest_main
+    Boost::headers
+    Threads::Threads
+)
+
 
 include(GoogleTest)
 
@@ -76,6 +91,10 @@ gtest_discover_tests(integration_tests
 
 gtest_discover_tests(commit_tests
     PROPERTIES LABELS "commit"
+)
+
+gtest_discover_tests(network_tests
+    PROPERTIES LABELS "network" TIMEOUT 30
 )
 
 # --- VALGRIND ---

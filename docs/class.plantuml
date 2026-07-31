@@ -1,98 +1,156 @@
 @startuml
+title Calculator TCP service — class diagram
 skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam shadowing false
+hide empty members
 
-class Application {
-  - IRepository
-  - IParser
-  - ICalculator
-  - IPrinter
+' ===== Composition root =====
+class main <<entrypoint>> {
+  + main() : int
+}
+note bottom of main
+  Blocks SIGTERM/SIGINT, builds the
+  RequestHandler and Server, then runs
+  the io_context until a signal arrives.
+end note
 
-  + run()
+class "boost::asio::io_context" as IoContext <<Boost.Asio>>
+
+package utils {
+  class SignalHandler {
+    - onShutdown : function<void()>
+    - thread : std::thread
+    - stopRequested : atomic<bool>
+    + start(onShutdown)
+    + waitForShutdown()
+    + stopRequested() : bool
+  }
 }
 
-' --- Interfaces ---
-
-interface IRepository {
-  + get(Request) : Task
-  + save(Task)
+' ===== Network layer =====
+package net {
+  class Server {
+    - acceptor : tcp::acceptor
+    - handler : RequestHandler&
+    + Server(io_context&, port, RequestHandler&)
+    + port() : uint16_t
+    - doAccept()
+  }
+  class Session {
+    - socket : tcp::socket
+    - handler : RequestHandler&
+    - buffer : streambuf
+    - response : string
+    + start()
+    - readLine()
+    - writeResponse(string)
+  }
 }
 
-interface IParser {
-  + parse(json) : Request
+' ===== Application layer =====
+package app {
+  class RequestHandler {
+    - repository : unique_ptr<IRepository>
+    - parser : unique_ptr<IParser>
+    - calculator : unique_ptr<ICalculator>
+    + handle(requestJson) : string
+  }
+  class Calculator {
+    + calculate(Request) : Task
+  }
 }
 
-interface ICalculator {
-  + calculate(Request) : Task
+package io {
+  class Parser {
+    + validateInput(argc, argv)
+    + parse(line) : Request
+  }
+  class "response" as Response <<free function>> {
+    + toResponse(Task) : string
+  }
 }
 
-interface IPrinter {
-  + print(Task)
+' ===== Domain interfaces =====
+package "core (interfaces)" {
+  interface IRepository {
+    + get(Request) : optional<Task>
+    + save(Task)
+  }
+  interface IParser {
+    + validateInput(argc, argv)
+    + parse(line) : Request
+  }
+  interface ICalculator {
+    + calculate(Request) : Task
+  }
 }
 
-' --- Implementations ---
-
-class JsonParser {}
-class Calculator {}
-class StdoutPrinter {}
-
-class Repository {
-  - ConnectionPool
-  - Cache
-  + save(Task)
-  + get(Request) : optional<Task>
+' ===== Storage layer =====
+package storage {
+  class Repository {
+    - pool : ConnectionPool
+    - cache : Cache
+    + get(Request) : optional<Task>
+    + save(Task)
+  }
+  class ConnectionPool {
+    - pool : deque<Connection>
+    + acquire() : ConnectionGuard
+    + release(Connection)
+    + empty() : bool
+  }
+  class Cache {
+    + get(Request) : optional<Task>
+    + insert(Task)
+  }
 }
 
-' --- (Concrete RAII Classes) ---
-
-class ConnectionGuard {
-  - Connection
-  - ConnectionPool&
-  + get() : void*
+package database {
+  class Connection {
+    + get() : void*
+    + operator bool()
+  }
+  class ConnectionGuard {
+    - conn : Connection
+    - pool : ConnectionPool&
+    + get() : void*
+  }
+  class Transaction {
+    + fetch(Request) : optional<Task>
+    + fetchAll(callback)
+    + record(Task)
+    + commit()
+  }
 }
 
-class Connection {
-  + get() : void*
-}
+' ===== Relationships =====
+main *-- SignalHandler
+main *-- IoContext
+main *-- RequestHandler
+main *-- Server
 
-class Transaction {
-  + fetch(Request) : optional<Task>
-  + fetchAll()
-  + record(Task)
-  + commit()
-}
+SignalHandler ..> IoContext : stop() on signal >
+Server --> IoContext : uses >
+Server ..> Session : creates >
+Server --> RequestHandler : handler& >
+Session --> RequestHandler : handler& >
 
-' --- Storage ---
+RequestHandler --> IRepository
+RequestHandler --> IParser
+RequestHandler --> ICalculator
+RequestHandler ..> Response : formats >
 
-class ConnectionPool {
-  - deque<Connection>
-  + acquire() : ConnectionGuard
-  + release(Connection)
-}
+Repository ..|> IRepository
+Parser ..|> IParser
+Calculator ..|> ICalculator
 
-class Cache {
-+ get(Request) : optional<Task>
-+ insert(Task)
-}
-
-' --- Relationships ---
-
-' Interface Realizations
-Repository      ..|> IRepository
-JsonParser      ..|> IParser
-Calculator      ..|> ICalculator
-StdoutPrinter   ..|> IPrinter
-
-' Application Dependencies
-Application --> IRepository
-Application --> IParser
-Application --> ICalculator
-Application --> IPrinter
-
-' Infrastructure Composition
-Repository *-- ConnectionPool : has-a >
-Repository *-- Cache  : has-a >
+Repository *-- ConnectionPool
+Repository *-- Cache
+Repository ..> Transaction : uses >
 ConnectionPool ..> ConnectionGuard : creates >
-ConnectionGuard --> Connection : manages >
-Transaction ..> ConnectionGuard : uses >
+ConnectionGuard *-- Connection : manages >
+ConnectionGuard --> ConnectionPool : releases to >
+Transaction *-- ConnectionGuard : holds >
 
 @enduml

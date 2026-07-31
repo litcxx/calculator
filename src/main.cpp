@@ -1,49 +1,71 @@
-#include "app/application.hpp"
 #include "app/calculator.hpp"
+#include "app/request_handler.hpp"
 #include "database/db_config.hpp"
 #include "io/parser.hpp"
-#include "io/stdout_printer.hpp"
+#include "net/server.hpp"
 #include "storage/cache.hpp"
 #include "storage/connection_pool.hpp"
 #include "storage/repository.hpp"
 #include "utils/logger.hpp"
+#include "utils/signal_handler.hpp"
 
+#include <boost/asio.hpp>
+
+#include <cstdint>
 #include <cstdlib>
 #include <exception>
-#include <iostream>
 #include <memory>
+#include <string>
 
 using namespace calculator; // NOLINT
 
-int main(int argc, char** argv)
+namespace
+{
+constexpr std::uint16_t kDefaultPort = 5555;
+
+std::uint16_t serverPort()
+{
+    if (const char* env = std::getenv("CALC_PORT")) // NOLINT
+    {
+        return static_cast<std::uint16_t>(std::stoul(env));
+    }
+    return kDefaultPort;
+}
+} // namespace
+
+// Long-running service: a dedicated thread waits for SIGTERM (thread #1) while
+// the main thread runs the Asio event loop serving clients (thread #2). On
+// signal the loop is stopped and the process shuts down gracefully.
+int main()
 {
     try
     {
+        SignalHandler signals; // block signals in the main thread FIRST
+
         const Config config = getConfig();
-
-        Cache cache;
-        ConnectionPool pool(1, config);
-
         auto repository =
-            std::make_unique<Repository>(std::move(pool), std::move(cache));
+            std::make_unique<Repository>(ConnectionPool(1, config), Cache{});
+        RequestHandler handler(std::move(repository),
+                               std::make_unique<Parser>(),
+                               std::make_unique<Calculator>());
 
-        Application application(
-            std::move(repository), std::make_unique<Parser>(),
-            std::make_unique<Calculator>(), std::make_unique<StdoutPrinter>());
-        application.run(argc, argv);
+        boost::asio::io_context ioContext;
+        // NOLINTNEXTLINE(misc-const-correctness): server mutates itself async
+        Server server(ioContext, serverPort(), handler);
+
+        // signal thread (#1) stops the loop
+        signals.start([&ioContext] { ioContext.stop(); });
+        Logger::getInstance().info("Listening on port " +
+                                   std::to_string(server.port()));
+
+        ioContext.run(); // worker thread (#2): accept and process requests
+
+        Logger::getInstance().info(
+            "SIGTERM received, shutting down gracefully");
     }
     catch (const std::exception& ec)
     {
-        calculator::Logger::getInstance().error(ec.what());
-        return EXIT_FAILURE;
-    }
-    catch (const std::string& str)
-    {
-        std::cout << str << '\n';
-    }
-    catch (...)
-    {
-        calculator::Logger::getInstance().error("Unknown error\n");
+        Logger::getInstance().error(ec.what());
         return EXIT_FAILURE;
     }
     return EXIT_SUCCESS;
